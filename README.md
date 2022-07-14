@@ -44,13 +44,6 @@ Base on this [website](https://gist.github.com/rain1024/98dd5e2c6c8c28f9ea9d), p
     bash ../tikzmake.sh test_simple
     ```
 
-## TODO
-
-- [X] Python interface
-- [ ] Add easy legend functionality
-- [ ] Add more layer shapes like TruncatedPyramid, 2DSheet etc
-- [ ] Add examples for RNN and likes.
-
 ## Latex usage
 
 See [`examples`](examples) directory for usage.
