@@ -1,7 +1,8 @@
 from .tikzeng import *
 
 
-def block_2ConvPool( name, botton, top, s_filer=256, n_filer=64, offset="(1,0,0)", size=(32,32,3.5), opacity=0.5 ):
+def block_2ConvPool(name, botton, top, s_filer=256, n_filer=64, offset="(1,0,0)",
+                    size=(32,32,3.5), opacity=0.5):
     return [
     to_ConvConvRelu( 
         name="ccr_{}".format( name ),
@@ -27,7 +28,8 @@ def block_2ConvPool( name, botton, top, s_filer=256, n_filer=64, offset="(1,0,0)
         )
     ]
 
-def block_Unconv( name, botton, top, s_filer=256, n_filer=64, offset="(1,0,0)", size=(32,32,3.5), opacity=0.5 ):
+def block_Unconv(name, botton, top, s_filer=256, n_filer=64, offset="(1,0,0)",
+                 size=(32,32,3.5), opacity=0.5):
     return [
         to_UnPool(  name='unpool_{}'.format(name),    offset=offset,    to="({}-east)".format(botton),         width=1,              height=size[0],       depth=size[1], opacity=opacity ),
         to_ConvRes( name='ccr_res_{}'.format(name),   offset="(0,0,0)", to="(unpool_{}-east)".format(name),    s_filer=str(s_filer), n_filer=str(n_filer), width=size[2], height=size[0], depth=size[1], opacity=opacity ),       
@@ -40,7 +42,8 @@ def block_Unconv( name, botton, top, s_filer=256, n_filer=64, offset="(1,0,0)", 
             )
     ]
 
-def block_Res( num, name, botton, top, s_filer=256, n_filer=64, offset="(0,0,0)", size=(32,32,3.5), opacity=0.5 ):
+def block_Res(num, name, botton, top, s_filer=256, n_filer=64, offset="(0,0,0)",
+              size=(32,32,3.5), opacity=0.5):
     lys = []
     layers = [ *[ '{}_{}'.format(name,i) for i in range(num-1) ], top]
     for name in layers:        
@@ -67,24 +70,31 @@ def block_Res( num, name, botton, top, s_filer=256, n_filer=64, offset="(0,0,0)"
     ]
     return lys
     
-def layer_connection(layer, name, source, height, depth, width,
-                     offset="(0,0,0)", **kwargs):
+def layer_connection(layer, name, source, opacity=0.5, **kwargs):
     block = [
-        layer(f"{name}_hide", offset=offset, to=f"({source}-east)", opacity=0,
-              height=height, depth=depth, width=width),
+        layer(f"{name}_hide", to=f"({source}-east)", opacity=0, **kwargs),
         to_connection(source, f"{name}_hide"),
-        layer(name, offset=offset, to=f"({source}-east)",
-              height=height, depth=depth, width=width, **kwargs)
+        layer(name, to=f"({source}-east)", opacity=opacity, **kwargs)
     ]
     return block
 
-def a_Conv(name, source, height, depth, width, width_label = "",
-           depth_label = "", offset="(0,0,0)"):
+def a_Conv(name, source, height, depth, width, offset, width_label = "",
+           depth_label = "", conv_first = True):
     # Wraps to_Conv with to_connection and to_Pool using layer_connection
-    block = [
-        *layer_connection(to_Conv, name, source, height, depth, width,
-                          offset=offset, s_filer=depth_label, n_filer=width_label),
-        to_Pool(name=f"{name}_activ", offset="(0,0,0)", to=f"({name}-east)",
-                height=height, depth=depth, width=1)
-    ]
+    if conv_first:
+        block = [
+            *layer_connection(to_Conv, name, source, offset=offset,
+                              s_filer=depth_label, n_filer=width_label,
+                              height=height, depth=depth, width=width),
+            to_Pool(name=f"{name}_activ", offset="(0,0,0)", to=f"({name}-east)",
+                    height=height, depth=depth, width=1)
+        ]
+    else:
+        block = [
+            *layer_connection(to_Pool, f"pre_{name}_activ", source, offset=offset,
+                              height=height, depth=depth, width=1),
+            to_Conv(name, offset="(0,0,0)", to=f"(pre_{name}_activ-east)",
+                    s_filer=depth_label, n_filer=width_label,
+                    height=height, depth=depth, width=width)
+        ]
     return block
